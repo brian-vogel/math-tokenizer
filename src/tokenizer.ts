@@ -1,4 +1,5 @@
 import { Token } from './token';
+import { TokenType } from './tokenType';
 
 export class Tokenizer {
 
@@ -23,31 +24,38 @@ export class Tokenizer {
       } else if (this.isLetter(char)) {
         if (this.numberBuffer.length) {
           this.emptyNumberBufferAsLiteral();
-          this.tokens.push(new Token('Operator', '*'));
+          this.tokens.push(new Token(TokenType.Operator, '*'));
         }
         this.letterBuffer.push(char);
       } else if (this.isOperator(char)) {
         this.emptyNumberBufferAsLiteral();
         this.emptyLetterBufferAsVariables();
-        this.tokens.push(new Token('Operator', char));
+        this.tokens.push(new Token(TokenType.Operator, char));
       } else if (this.isLeftParenthesis(char)) {
         if (this.letterBuffer.length) {
-          this.tokens.push(new Token("Function", this.letterBuffer.join("")));
+          this.tokens.push(new Token(TokenType.Function, this.letterBuffer.join("")));
           this.letterBuffer = [];
         } else if (this.numberBuffer.length) {
           this.emptyNumberBufferAsLiteral();
-          this.tokens.push(new Token("Operator", "*"));
+          this.tokens.push(new Token(TokenType.Operator, "*"));
         }
-        this.tokens.push(new Token('Left Parenthesis', char));
+        this.tokens.push(new Token(TokenType.LeftParenthesis, char));
       } else if (this.isRightParenthesis(char)) {
         this.emptyLetterBufferAsVariables();
         this.emptyNumberBufferAsLiteral();
-        this.tokens.push(new Token('Right Parentesis', char));
+        this.tokens.push(new Token(TokenType.RightParenthesis, char));
       } else if (this.isComma(char)) {
         this.emptyLetterBufferAsVariables();
         this.emptyNumberBufferAsLiteral();
-        this.tokens.push(new Token('Function Argument Separator', char));
+        this.tokens.push(new Token(TokenType.FunctionArgumentSeparator, char));
       }
+    }
+
+    if (this.numberBuffer.length) {
+      this.emptyNumberBufferAsLiteral();
+    }
+    if (this.letterBuffer.length) {
+      this.emptyLetterBufferAsVariables();
     }
 
     return this.tokens;
@@ -55,16 +63,16 @@ export class Tokenizer {
 
   private emptyNumberBufferAsLiteral() {
     if (this.numberBuffer.length) {
-      this.tokens.push(new Token('Literal', this.numberBuffer.join('')));
+      this.tokens.push(new Token(TokenType.Literal, this.numberBuffer.join('')));
       this.numberBuffer = [];
     }
   }
 
   private emptyLetterBufferAsVariables() {
     for (var i = 0; i < this.letterBuffer.length; i++) {
-      this.tokens.push(new Token("Variable", this.letterBuffer[i]));
+      this.tokens.push(new Token(TokenType.Variable, this.letterBuffer[i]));
       if (i < this.letterBuffer.length - 1) { //there are more Variables left
-        this.tokens.push(new Token("Operator", "*"));
+        this.tokens.push(new Token(TokenType.Operator, "*"));
       }
     }
     this.letterBuffer = [];

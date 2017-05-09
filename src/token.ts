@@ -1,5 +1,7 @@
+import { TokenType } from './tokenType';
+
 export class Token {
-  public type: string;
+  public type: TokenType;
   public value: string;
 
   constructor(type, value) {
