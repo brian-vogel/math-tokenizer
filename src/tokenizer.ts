@@ -1,59 +1,109 @@
 import { Token } from './token';
 
-export function tokenize(str: string): Token[] {
-  
-  let splitStrings = str.replace(' ', '').split("");
+export class Tokenizer {
 
-  let tokens: Token[] = assignTokens(splitStrings);
+  private tokens: Token[];
+  private letterBuffer: string[];
+  private numberBuffer: string[];
 
-  return tokens;
-}
+  constructor() { }
 
-function assignTokens(splitStrings: string[]): Token[] {
-  let tokens: Token[] = [];
-  for (let char of splitStrings) {
-    if(isDigit(char)) {
-      tokens.push(new Token("Literal", char));
-    } else if(isLetter(char)) {
-      tokens.push(new Token("Variable", char));
-    } else if(isOperator(char)) {
-      tokens.push(new Token("Operator", char));
-    } else if(isLeftParenthesis(char)) {
-      tokens.push(new Token("Left Parenthesis", char));
-    } else if(isRightParenthesis(char)) {
-      tokens.push(new Token("Right Parentesis", char));
-    } else if(isComma(char)) {
-      tokens.push(new Token("Function Argument Separator", char));      
+  tokenize(str: string) {
+    this.tokens = [];
+    this.letterBuffer = [];
+    this.numberBuffer = [];
+
+    let splitStrings = str.replace(' ', '').split('');
+    for (let char of splitStrings) {
+
+      if (this.isDigit(char)) {
+        this.numberBuffer.push(char);
+      } else if (this.isDecimalPoint(char)) {
+        this.numberBuffer.push(char);
+      } else if (this.isLetter(char)) {
+        if (this.numberBuffer.length) {
+          this.emptyNumberBufferAsLiteral();
+          this.tokens.push(new Token('Operator', '*'));
+        }
+        this.letterBuffer.push(char);
+      } else if (this.isOperator(char)) {
+        this.emptyNumberBufferAsLiteral();
+        this.emptyLetterBufferAsVariables();
+        this.tokens.push(new Token('Operator', char));
+      } else if (this.isLeftParenthesis(char)) {
+        if (this.letterBuffer.length) {
+          this.tokens.push(new Token("Function", this.letterBuffer.join("")));
+          this.letterBuffer = [];
+        } else if (this.numberBuffer.length) {
+          this.emptyNumberBufferAsLiteral();
+          this.tokens.push(new Token("Operator", "*"));
+        }
+        this.tokens.push(new Token('Left Parenthesis', char));
+      } else if (this.isRightParenthesis(char)) {
+        this.emptyLetterBufferAsVariables();
+        this.emptyNumberBufferAsLiteral();
+        this.tokens.push(new Token('Right Parentesis', char));
+      } else if (this.isComma(char)) {
+        this.emptyLetterBufferAsVariables();
+        this.emptyNumberBufferAsLiteral();
+        this.tokens.push(new Token('Function Argument Separator', char));
+      }
+    }
+
+    return this.tokens;
+  }
+
+  private emptyNumberBufferAsLiteral() {
+    if (this.numberBuffer.length) {
+      this.tokens.push(new Token('Literal', this.numberBuffer.join('')));
+      this.numberBuffer = [];
     }
   }
 
-  return tokens;
+  private emptyLetterBufferAsVariables() {
+    for (var i = 0; i < this.letterBuffer.length; i++) {
+      this.tokens.push(new Token("Variable", this.letterBuffer[i]));
+      if (i < this.letterBuffer.length - 1) { //there are more Variables left
+        this.tokens.push(new Token("Operator", "*"));
+      }
+    }
+    this.letterBuffer = [];
+  }
+
+  private isComma(char: string): boolean {
+    return (char === ',');
+  }
+
+  private isDecimalPoint(char: string): boolean {
+    return (char === '.');
+  }
+
+  private isDigit(char: string): boolean {
+    return !isNaN(parseInt(char));
+  }
+
+  private isLetter(char: string): boolean {
+    return char.toLowerCase() != char.toUpperCase();
+  }
+
+  private isOperator(char: string): boolean {
+    return (char === '+') ||
+      (char === '-') ||
+      (char === '*') ||
+      (char === '/') ||
+      (char === '^');
+  }
+
+  private isLeftParenthesis(char: string): boolean {
+    return (char === '(');
+  }
+
+  private isRightParenthesis(char: string): boolean {
+    return (char == ')');
+  }
 }
 
-function isComma(char: string): boolean {
-  return (char === ',');
-}
-
-function isDigit(char: string): boolean {
-  return !isNaN(parseInt(char));
-}
-
-function isLetter(char: string): boolean {
-  return char.toLowerCase() != char.toUpperCase();
-}
-
-function isOperator(char: string): boolean {
-  return (char === '+') ||
-    (char === '-') ||
-    (char === '*') ||
-    (char === '/') ||
-    (char === '^'); 
-}
 
 
-function isLeftParenthesis(char: string): boolean {
- return (char === "(");
-}
-function isRightParenthesis(char: string): boolean {
- return (char == ")");
-}
+
+
